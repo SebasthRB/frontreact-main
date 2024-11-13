@@ -1,13 +1,32 @@
 import React from 'react';
 import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 // Importa la imagen local
-import Huaytapallana from 'C:/Users/SEBASTHIAN/OneDrive/Desktop/PROYECTO/frontreact-main/src/img/Huaytapallana.png';
-import Cusco from 'C:/Users/SEBASTHIAN/OneDrive/Desktop/PROYECTO/frontreact-main/src/img/cusco.jpg';
-import Arequipa from 'C:/Users/SEBASTHIAN/OneDrive/Desktop/PROYECTO/frontreact-main/src/img/arequipa.jpeg';
+import Huaytapallana from '../img/Huaytapallana.png';
+import Cusco from '../img/cusco.jpg';
+import Arequipa from '../img/arequipa.jpeg';
+import anfitrion from '../img/anfitrion.png';
+import { CommonActions } from '@react-navigation/native';
 
 export default function ExploreScreen() {
   const navigation = useNavigation(); // Hook para la navegación
+
+  // Función para cerrar sesión
+  const handleSignOut = async () => {
+    try {
+      // Eliminar el token de sesión o los datos de autenticación
+      await AsyncStorage.clear(); // Asegúrate de que el token esté guardado en 'user_token'
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        })
+      );
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
 
   // Datos de los destinos
   const destinations = [
@@ -15,28 +34,58 @@ export default function ExploreScreen() {
       id: 1,
       image: Huaytapallana,
       title: 'Nevado de Huaytapallana',
+      subtitle: 'Huaytapallana',
       distance: 'A 20 km de distancia',
-      description: 'La zona se caracteriza por sus seis lagunas: Ancapuachanan, Carhuacocha, Chuspicocha, Cocha Grande o Jatunccocha, Lazo Huntay y Pumacocha.',
+      prevDescrip: 'Huaytapallana es una montaña en el Perú que pertenece a la cordillera de Huaytapallana, una prolongación de la cordillera Central, ramal montañoso de los Andes. ',
+      description: 'La zona se caracteriza por sus seis lagunas: Ancapuachanan, Carhuacocha, Chuspicocha, Cocha Grande o Jatunccocha, Lazo Huntay y Pumacocha. Está protegida como parte del área de conservación regional Huaytapallana desde 2011. Se encuentra en el departamento de Junín, provincia de Huancayo.',
       price: 'S/.75',
       rating: 4.93,
+      whatsappNumber: '+51989181858',
+      duration: 'Duración: 1 día completo',
+      includes: 'Incluye: Guía, transporte y refrigerio',
+      activities: 'Actividades: Trekking, observación de fauna y flora',
+      maxGroupSize: 10,
+      hostName: 'Tony Ulloa',
+      hostExperience: 'SuperAnfitrión · 4 años de experiencia',
+      hostImage: anfitrion,
     },
     {
       id: 2,
       image: Cusco,
       title: 'Cusco, Perú',
+      subtitle: 'Cusco',
       distance: 'A 340 km de distancia',
-      description: 'Ciudad histórica con maravillas arqueológicas.',
-      price: '$100 noche',
+      prevDescrip: 'El Santuario Histórico de Machu Picchu se ubica en la provincia de Urubamba, Región Cusco.',
+      description: 'Cusco, la antigua capital del Imperio Inca, es conocida por su asombroso legado arqueológico y su historia vibrante, atrayendo visitantes de todo el mundo. El Santuario Histórico de Machu Picchu se ubica en la provincia de Urubamba, Región Cusco. Comprende un extenso paisaje cultural y natural localizado en diversos ecosistemas, en el que también existen otros sitios arqueológicos conectados por caminos que conducen a la ciudad inca.',
+      price: 'S/.100',
       rating: 4.89,
+      whatsappNumber: '+51945503933',
+      duration: 'Duración: 4 días y 3 noches',
+      includes: 'Incluye: Transporte, alojamiento, entradas a sitios arqueológicos, guía bilingüe y comidas indicadas en el itinerario',
+      activities: 'Actividades: Tours guiados por Cusco, Valle Sagrado y Machu Picchu',
+      maxGroupSize: 15,
+      hostName: 'Josue Lorenzo',
+      hostExperience: 'SuperAnfitrión · 4 años de experiencia',
+      hostImage: anfitrion,
     },
     {
       id: 3,
       image: Arequipa,
       title: 'Arequipa, Perú',
+      subtitle: 'Arequipa',
       distance: 'A 250 km de distancia',
-      description: 'Conocida por su arquitectura colonial.',
-      price: '$85 noche',
+      prevDescrip: 'Arequipa es conocida como la Ciudad Blanca debido a su arquitectura construida con piedra volcánica blanca, llamada sillar',
+      description: 'Arequipa es conocida como la Ciudad Blanca debido a su arquitectura construida con piedra volcánica blanca, llamada sillar. Sin embargo, muchas personas han pensado darle otro nombre, puesto que sus paisajes están rodeados por cuatro imponentes volcanes.',
+      price: 'S/.85',
       rating: 4.75,
+      whatsappNumber: '+51902242761',
+      duration: 'Duración: 3 días y 2 noches',
+      includes: 'Incluye: Alojamiento, tours locales y desayuno',
+      activities: 'Actividades: Recorridos por el Centro Histórico, visita al Monasterio de Santa Catalina y miradores',
+      maxGroupSize: 12,
+      hostName: 'Sebastian Basualdo',
+      hostExperience: 'SuperAnfitrión · 6 años de experiencia',
+      hostImage: anfitrion,
     },
   ];
 
@@ -54,6 +103,9 @@ export default function ExploreScreen() {
         </TouchableOpacity>
         <TouchableOpacity style={styles.filterIconContainer}>
           <Text style={styles.filterIcon}>⚙</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <Text style={styles.signOutText}>Cerrar sesión</Text>
         </TouchableOpacity>
       </View>
 
@@ -90,12 +142,26 @@ export default function ExploreScreen() {
                 </View>
               </View>
               <Text style={styles.cardSubtitle}>{destination.distance}</Text>
-              <Text style={styles.cardSubtitle}>{destination.description}</Text>
+              <Text style={styles.cardSubtitle}>{destination.prevDescrip}{"\n"}</Text>
               <Text style={styles.cardPrice}>{destination.price}</Text>
             </View>
             <TouchableOpacity 
               style={styles.mapButton} 
-              onPress={() => navigation.navigate('ReservaScreen')} // Navega a ReservaScreen
+              onPress={() => navigation.navigate('ReservaScreen', {
+                image: destination.image,
+                title: destination.title,
+                subtitle: destination.subtitle,
+                whatsappNumber: destination.whatsappNumber,
+                description: destination.description,
+                price: destination.price,
+                rating: destination.rating,
+                duration: destination.duration,
+                includes: destination.includes,
+                activities: destination.activities,
+                maxGroupSize: destination.maxGroupSize,
+                hostName: destination.hostName,
+                hostExperience: destination.hostExperience,
+              })} // Navega a ReservaScreen
             >
               <Text style={styles.mapButtonText}>Comprar</Text>
             </TouchableOpacity>
@@ -146,6 +212,17 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ccc',
     backgroundColor: '#fff',
     zIndex: 1,
+  },
+  signOutButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: '#FF6347',
+    borderRadius: 5,
+    marginRight: 10,
+  },
+  signOutText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   searchInput: {
     flex: 1,

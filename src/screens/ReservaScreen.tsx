@@ -1,37 +1,95 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import Cusco from 'C:/Users/SEBASTHIAN/OneDrive/Desktop/PROYECTO/frontreact-main/src/img/cusco.jpg';
-import anfitrion from 'C:/Users/SEBASTHIAN/OneDrive/Desktop/PROYECTO/frontreact-main/src/img/anfitrion.png';
+import React,  { useState, useEffect } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Linking } from 'react-native';
+import anfitrion from '../img/anfitrion.png';
+import { useRoute, useNavigation } from '@react-navigation/native';
 
 export default function ContactScreen() {
+
+  const navigation = useNavigation(); // Obtener acceso a la navegación
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+  
+  const handleGoBack = () => {
+    if (!isButtonDisabled) {
+      setIsButtonDisabled(true); // Deshabilitar el botón al hacer clic
+      setTimeout(() => {
+        navigation.goBack(); // Regresar al menú después de 1 segundo
+      }, 100); // Retraso de 1 segundo para evitar múltiples clics
+    }
+  };
+
+  const route = useRoute();
+  const { 
+    image,
+    title,
+    subtitle,
+    whatsappNumber,
+    description,
+    price,
+    rating,
+    duration,
+    includes,
+    activities,
+    maxGroupSize,
+    hostName,
+    hostExperience,
+  } = route.params;
+
+  const [reviews, setReviews] = useState(0);
+  
+  useEffect(() => {
+    const randomReviews = Math.floor(Math.random() * 91) + 10; // Genera un número entre 10 y 100
+    setReviews(randomReviews);
+  }, []);
+
+  const [showFullDescription, setShowFullDescription] = useState(false);
+
+  const toggleDescription = () => {
+    setShowFullDescription(!showFullDescription);
+  };
+
+  const handleWhatsAppPress = () => {
+
+    const message = 'Hola, me gustaría reservar un tour para "${title}". ¿Podrías darme más información?';
+    const whatsappURL = 'whatsapp://send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}';
+
+    // Intentar abrir el enlace de WhatsApp
+    Linking.openURL(whatsappURL).catch((err) => {
+      console.error("No se pudo abrir WhatsApp", err);
+    });
+  };
+
   return (
     <View style={styles.container}>
       {/* Imagen Principal */}
       <Image
         style={styles.mainImage}
-        source={Cusco} // Se reemplaza la imagen con la ruta local
+        source={image} // Se reemplaza la imagen con la ruta local
       />
 
       {/* Botón Circular en la parte superior derecha */}
-      <TouchableOpacity style={styles.circularButton}>
+      <TouchableOpacity 
+        style={styles.circularButton} 
+        onPress={handleGoBack} // Volver al menú
+        disabled={isButtonDisabled} // Deshabilitar el botón si está en proceso
+      >
         <Text style={styles.buttonText}>X</Text>
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Información General */}
         <View style={styles.infoContainer}>
-          <Text style={styles.title}>Linda cabaña rústica en Mala</Text>
-          <Text style={styles.subtitle}>Cusco </Text>
-          <Text style={styles.details}>Duración: 4 días y 3 noches{"\n"}
-            Incluye: Transporte, alojamiento, entradas a sitios arqueológicos, guía bilingüe y comidas indicadas en el itinerario.{"\n"}
-            Actividades: Tours guiados por Cusco, Valle Sagrado y Machu Picchu.{"\n"}
-            Grupo: Máximo 15 personas, para una experiencia personalizada.{"\n"}</Text>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.subtitle}>{subtitle} </Text>
+          <Text style={styles.details}>{duration}</Text>
+          <Text style={styles.details}>{includes}</Text>
+          <Text style={styles.details}>{activities}</Text>
+          <Text style={styles.details}>Grupo máximo: {maxGroupSize} personas</Text>
 
           {/* Calificación y Opiniones */}
           <View style={styles.ratingContainer}>
-            <Text style={styles.ratingText}>4.93 ★★★★★{"\n"}</Text>
+            <Text style={styles.ratingText}>Calificación: {rating} ★★★★{"\n"}</Text>
             <Text style={styles.favoriteText}>Favorito entre huéspedes{"\n"}</Text>
-            <Text style={styles.reviewText}>41 Evaluaciones{"\n"}</Text>
+            <Text style={styles.reviewText}>{reviews} Evaluaciones{"\n"}</Text>
           </View>
 
           {/* Información del Anfitrión */}
@@ -41,8 +99,8 @@ export default function ContactScreen() {
               source={anfitrion} // Imagen del anfitrión
             />
             <View style={styles.hostDetails}>
-              <Text style={styles.hostName}>Anfitrión: Sebastian Basualdo</Text>
-              <Text style={styles.hostSubtitle}>SuperAnfitrión · 4 años de experiencia</Text>
+              <Text style={styles.hostName}>{hostName}</Text>
+              <Text style={styles.hostSubtitle}>{hostExperience}</Text>
             </View>
           </View>
         </View>
@@ -50,21 +108,22 @@ export default function ContactScreen() {
         {/* Descripción */}
         <View style={styles.descriptionContainer}>
           <Text style={styles.descriptionText}>
-            El Santuario Histórico de Machupicchu​ es un área protegida del Perú de más de 35 mil hectáreas que comprende
-            el entorno natural del sitio arqueológico de Machupicchu, enclavados en la abrupta selva nubosa de las yungas
-            en la vertiente oriental de los Andes peruanos y a ambas márgenes del río Urubamba, que corre en esta sección 
-            con dirección noroeste.
+            {showFullDescription ? description : '${description.substring(0, 200)}...'}
           </Text>
-          <TouchableOpacity>
-            <Text style={styles.moreText}>Mostrar más ></Text>
+          <TouchableOpacity onPress={toggleDescription}>
+            <Text style={styles.moreText}>{showFullDescription ? 'Mostrar menos' : 'Mostrar más >'}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Botón para Reservar o Contactar */}
         <View style={styles.bottomContainer}>
-          <Text style={styles.priceText}>$64 noche</Text>
-          <Text style={styles.dateText}>18–23 de nov.</Text>
-          <TouchableOpacity style={styles.reserveButton}>
+          <View style={styles.ratingContainer}>
+            <Text style={styles.priceText}>{price} noche</Text>
+            <Text style={styles.dateText}>18–23 de nov.{"\n"}</Text>
+            <Text style={styles.hostReserv}>Reserva tu Tour a {"\n"}{title}{"\n"}</Text>
+            <Text style={styles.hostReserv}>{"\n"}</Text>
+          </View>
+          <TouchableOpacity style={styles.reserveButton} onPress={handleWhatsAppPress}>
             <Text style={styles.reserveButtonText}>Reservar</Text>
           </TouchableOpacity>
         </View>
@@ -86,16 +145,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 15,
     right: 10,
-    width: 40,
-    height: 40,
+    width: 35,
+    height: 35,
     borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)', // Color negro translúcido
+    backgroundColor: 'rgba(255, 255, 255, 1)', // Color negro translúcido
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonText: {
     color: '#000', // Color negro para la "X"
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   
@@ -151,6 +210,10 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   hostName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  hostReserv: {
     fontSize: 16,
     fontWeight: 'bold',
   },
