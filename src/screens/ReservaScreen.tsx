@@ -49,8 +49,8 @@ export default function ContactScreen() {
 
   const handleWhatsAppPress = () => {
 
-    const message = 'Hola, me gustaría reservar un tour para "${title}". ¿Podrías darme más información?';
-    const whatsappURL = 'whatsapp://send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}';
+    const message = `Hola, me gustaría reservar un tour para "${title}". ¿Podrías darme más información?`;
+    const whatsappURL = `whatsapp://send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
 
     // Intentar abrir el enlace de WhatsApp
     Linking.openURL(whatsappURL).catch((err) => {

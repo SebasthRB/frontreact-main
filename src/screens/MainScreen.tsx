@@ -87,6 +87,25 @@ export default function ExploreScreen() {
       hostExperience: 'SuperAnfitrión · 6 años de experiencia',
       hostImage: anfitrion,
     },
+    {
+      id: 4,
+      image: Arequipa,
+      title: 'Huancayo, Perú',
+      subtitle: 'Arequipa',
+      distance: 'A 250 km de distancia',
+      prevDescrip: 'Arequipa es conocida como la Ciudad Blanca debido a su arquitectura construida con piedra volcánica blanca, llamada sillar',
+      description: 'Arequipa es conocida como la Ciudad Blanca debido a su arquitectura construida con piedra volcánica blanca, llamada sillar. Sin embargo, muchas personas han pensado darle otro nombre, puesto que sus paisajes están rodeados por cuatro imponentes volcanes.',
+      price: 'S/.85',
+      rating: 4.75,
+      whatsappNumber: '+51902242761',
+      duration: 'Duración: 3 días y 2 noches',
+      includes: 'Incluye: Alojamiento, tours locales y desayuno',
+      activities: 'Actividades: Recorridos por el Centro Histórico, visita al Monasterio de Santa Catalina y miradores',
+      maxGroupSize: 12,
+      hostName: 'Sebastian Basualdo',
+      hostExperience: 'SuperAnfitrión · 6 años de experiencia',
+      hostImage: anfitrion,
+    },
   ];
 
   return (
