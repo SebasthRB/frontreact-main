@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Enlace HTTP para conectar con el servidor de GraphQL
 const httpLink = createHttpLink({
-  uri: 'http://10.0.2.2:4000/', // Cambia "localhost" a la URL donde esté corriendo tu servidor, o a la IP si estás en un dispositivo físico
+  uri: 'http://192.168.40.223:4000/', // Cambia "localhost" a la URL donde esté corriendo tu servidor, o a la IP si estás en un dispositivo físico
 });
 
 // Middleware para agregar el token JWT a las solicitudes

@@ -27,7 +27,7 @@ const App = () => {
           <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
           <Stack.Screen name="CrearCuenta" component={CrearCuentaScreen} options={{ headerShown: true }} />
           <Stack.Screen name="MenuScreen" component={MenuScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Main" component={MainScreen} options={{ headerShown: true }} />
+          <Stack.Screen name="Main" component={MainScreen} options={{ headerShown: false }} />
           <Stack.Screen name="ReservaScreen" component={ReservaScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       </NavigationContainer>

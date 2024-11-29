@@ -1,44 +1,168 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-// Importa la imagen local
-import Huaytapallana from 'C:/Users/SEBASTHIAN/OneDrive/Desktop/PROYECTO/frontreact-main/src/img/Huaytapallana.png';
-import Cusco from 'C:/Users/SEBASTHIAN/OneDrive/Desktop/PROYECTO/frontreact-main/src/img/cusco.jpg';
-import Arequipa from 'C:/Users/SEBASTHIAN/OneDrive/Desktop/PROYECTO/frontreact-main/src/img/arequipa.jpeg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CommonActions } from '@react-navigation/native';
+import RNFS from 'react-native-fs';
+import axios from 'axios';
 
 export default function ExploreScreen() {
   const navigation = useNavigation(); // Hook para la navegación
 
-  // Datos de los destinos
-  const destinations = [
-    {
-      id: 1,
-      image: Huaytapallana,
-      title: 'Nevado de Huaytapallana',
-      distance: 'A 20 km de distancia',
-      description: 'La zona se caracteriza por sus seis lagunas: Ancapuachanan, Carhuacocha, Chuspicocha, Cocha Grande o Jatunccocha, Lazo Huntay y Pumacocha.',
-      price: 'S/.75',
-      rating: 4.93,
-    },
-    {
-      id: 2,
-      image: Cusco,
-      title: 'Cusco, Perú',
-      distance: 'A 340 km de distancia',
-      description: 'Ciudad histórica con maravillas arqueológicas.',
-      price: '$100 noche',
-      rating: 4.89,
-    },
-    {
-      id: 3,
-      image: Arequipa,
-      title: 'Arequipa, Perú',
-      distance: 'A 250 km de distancia',
-      description: 'Conocida por su arquitectura colonial.',
-      price: '$85 noche',
-      rating: 4.75,
-    },
-  ];
+  // Función para cerrar sesión
+  const handleSignOut = async () => {
+    try {
+      // Eliminar el token de sesión o los datos de autenticación
+      await AsyncStorage.clear();
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        })
+      );
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
+
+  // Estado para almacenar los destinos obtenidos desde la API
+  const [paquete, setPaquetes] = useState([]);
+  const [destino, setDestinos] = useState([]);
+  const [agencia, setAgencias] = useState([]);
+  const [localImages, setLocalImages] = useState<Record<string, string>>({}); // Estado para imágenes descargadas
+
+  useEffect(() => {
+    fetchPaquetes();
+    fetchDestinos();
+    fetchAgencias();
+
+  }, []);
+
+  const fetchPaquetes = () => {
+    // La consulta GraphQL
+    const query = `
+      query {
+        paquetes {
+          nombre
+          descripcion
+          precio
+          duracion
+          destino
+          incluye
+          grupo
+          calificacion
+          foto
+          agencia_id
+          telefono
+        }
+      }
+    `;
+
+    axios
+      .post('http://192.168.40.223:4000/', {
+        query: query,
+      })
+      .then((response) => {
+        const paquetesData = response.data.data.paquetes;
+        setPaquetes(paquetesData);
+        downloadImages(paquetesData);
+      })
+        .catch((error) => {
+        console.error('Error al obtener paquetes:', error);
+      });
+  };
+  
+  const fetchDestinos = () => {
+    // La consulta GraphQL
+    const query = `
+      query {
+        destinos {
+          nombre
+          descripcion
+          puntos_interes
+          actividades
+          clima
+          mejor_epoca
+        }
+      }
+    `;
+    axios
+    .post('http://192.168.40.223:4000/', {
+      query: query,
+    })
+    .then((response) => {
+      const destinosData = response.data.data.destinos;
+      setDestinos(destinosData);
+    })
+      .catch((error) => {
+      console.error('Error al obtener destinos:', error);
+    });
+  };
+  
+  const fetchAgencias = () => {
+    // La consulta GraphQL
+    const query = `
+      query {
+        agencias {
+          nombre
+          contacto
+          telefono
+          email
+          direccion
+        }
+      }
+    `;
+    axios
+    .post('http://192.168.40.223:4000/', {
+      query: query,
+    })
+    .then((response) => {
+      const agenciasData = response.data.data.agencias;
+      setAgencias(agenciasData);
+    })
+      .catch((error) => {
+      console.error('Error al obtener agencias:', error);
+    });
+  };
+
+  type Paquete = {
+    nombre: string;
+    foto: string;
+  };
+
+  type DownloadedImages = Record<string, string>; // Mapeo del nombre del paquete a la ruta local de la imagen
+
+  const downloadImages = async (paquetes: Paquete[]): Promise<void> => {
+  const downloadedImages: DownloadedImages = {}; // Declara el tipo explícito
+  const imgDirectory = `${RNFS.DocumentDirectoryPath}/img`; // Ruta local para guardar imágenes
+
+  try {
+    // Crea el directorio "img" si no existe
+    const dirExists = await RNFS.exists(imgDirectory);
+    if (!dirExists) {
+      await RNFS.mkdir(imgDirectory);
+    }
+
+    for (const paquete of paquetes) {
+      const imageUrl = paquete.foto;
+      const fileName = imageUrl.split('/').pop(); // Obtén el nombre del archivo desde la URL
+      const localPath = `${imgDirectory}/${fileName}`; // Guarda las imágenes en la carpeta "img"
+
+      // Verifica si la imagen ya fue descargada
+      const fileExists = await RNFS.exists(localPath);
+      if (!fileExists) {
+        await RNFS.downloadFile({ fromUrl: imageUrl, toFile: localPath }).promise;
+      }
+
+      // Asigna la ruta local de la imagen al objeto
+      downloadedImages[paquete.nombre] = `file://${localPath}`;
+    }
+
+    setLocalImages(downloadedImages); // Actualiza el estado con las rutas locales
+  } catch (error) {
+    console.error('Error al descargar o guardar imágenes:', error);
+  }
+};
 
   return (
     <View style={styles.container}>
@@ -54,6 +178,9 @@ export default function ExploreScreen() {
         </TouchableOpacity>
         <TouchableOpacity style={styles.filterIconContainer}>
           <Text style={styles.filterIcon}>⚙</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <Text style={styles.signOutText}>Cerrar sesión</Text>
         </TouchableOpacity>
       </View>
 
@@ -75,32 +202,52 @@ export default function ExploreScreen() {
           </TouchableOpacity>
         </ScrollView>
 
+
         {/* Cards de alojamientos con datos de destinos */}
-        {destinations.map((destination) => (
-          <View key={destination.id} style={styles.card}>
-            <Image style={styles.cardImage} source={destination.image} />
+        {paquete.length > 0 ? (
+          paquete.map((paquete, i) => (
+          <View key={i} style={styles.card}>
+            <Image style={styles.cardImage} source={{ uri: localImages[paquete.nombre] || paquete.foto }} />
             <TouchableOpacity style={styles.favoriteButton}>
               <Text style={styles.favoriteIcon}>🖤</Text>
             </TouchableOpacity>
             <View style={styles.cardContent}>
               <View style={styles.titleContainer}>
-                <Text style={styles.cardTitle}>{destination.title}</Text>
+                <Text style={styles.cardTitle}>{paquete.nombre}</Text>
                 <View style={styles.ratingContainer}>
-                  <Text style={styles.ratingText}>★ {destination.rating}</Text>
+                  <Text style={styles.ratingText}>★ {paquete.calificacion}</Text>
                 </View>
               </View>
-              <Text style={styles.cardSubtitle}>{destination.distance}</Text>
-              <Text style={styles.cardSubtitle}>{destination.description}</Text>
-              <Text style={styles.cardPrice}>{destination.price}</Text>
+              <Text style={styles.cardSubtitle}>{"\n"}{paquete.destino}{"\n"}</Text>
+              <Text style={styles.cardSubtitle}>{paquete.descripcion}{"\n"}</Text>
+              <Text style={styles.cardPrice}>{"S/."}{paquete.precio}</Text>
             </View>
             <TouchableOpacity 
               style={styles.mapButton} 
-              onPress={() => navigation.navigate('ReservaScreen')} // Navega a ReservaScreen
+              onPress={() => navigation.navigate('ReservaScreen', {
+                foto: { uri: localImages[paquete.nombre] || paquete.foto },
+                destino: destino.nombre,
+                subtitle: paquete.destino,
+                whatsappNumber: paquete.telefono,
+                description: paquete.descripcion,
+                price: paquete.precio,
+                rating: paquete.calificacion,
+                duration: paquete.duracion,
+                includes: paquete.incluye,
+                interes: destino.puntos_interes,
+                activities: destino.actividades,
+                maxGroupSize: paquete.grupo,
+                hostName: agencia.nombre,
+                hostExperience: agencia.contacto,
+              })} // Navega a ReservaScreen
             >
               <Text style={styles.mapButtonText}>Comprar</Text>
             </TouchableOpacity>
           </View>
-        ))}
+        ))
+      ) : (
+        <Text>Cargando destinos...</Text>
+      )}
       </ScrollView>
 
       {/* Barra de navegación inferior */}
@@ -146,6 +293,17 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ccc',
     backgroundColor: '#fff',
     zIndex: 1,
+  },
+  signOutButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: '#FF6347',
+    borderRadius: 5,
+    marginRight: 10,
+  },
+  signOutText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   searchInput: {
     flex: 1,
@@ -211,8 +369,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 24,
+    color: 'black',
   },
   ratingContainer: {
     flexDirection: 'row',
