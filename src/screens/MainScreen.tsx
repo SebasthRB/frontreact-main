@@ -3,8 +3,9 @@ import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, ScrollView 
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CommonActions } from '@react-navigation/native';
-import RNFS from 'react-native-fs';
-import axios from 'axios';
+
+import { useQuery } from '@apollo/client';
+import { GET_PAQUETES } from '../graphql/obtenerPaquetes';
 
 export default function ExploreScreen() {
   const navigation = useNavigation(); // Hook para la navegación
@@ -25,144 +26,18 @@ export default function ExploreScreen() {
     }
   };
 
-  // Estado para almacenar los destinos obtenidos desde la API
-  const [paquete, setPaquetes] = useState([]);
-  const [destino, setDestinos] = useState([]);
-  const [agencia, setAgencias] = useState([]);
-  const [localImages, setLocalImages] = useState<Record<string, string>>({}); // Estado para imágenes descargadas
+  const { loading, error, data } = useQuery(GET_PAQUETES);
 
-  useEffect(() => {
-    fetchPaquetes();
-    fetchDestinos();
-    fetchAgencias();
+  if (loading) return <Text>Cargando...</Text>;
 
-  }, []);
-
-  const fetchPaquetes = () => {
-    // La consulta GraphQL
-    const query = `
-      query {
-        paquetes {
-          nombre
-          descripcion
-          precio
-          duracion
-          destino
-          incluye
-          grupo
-          calificacion
-          foto
-          agencia_id
-          telefono
-        }
-      }
-    `;
-
-    axios
-      .post('http://192.168.40.223:4000/', {
-        query: query,
-      })
-      .then((response) => {
-        const paquetesData = response.data.data.paquetes;
-        setPaquetes(paquetesData);
-        downloadImages(paquetesData);
-      })
-        .catch((error) => {
-        console.error('Error al obtener paquetes:', error);
-      });
-  };
-  
-  const fetchDestinos = () => {
-    // La consulta GraphQL
-    const query = `
-      query {
-        destinos {
-          nombre
-          descripcion
-          puntos_interes
-          actividades
-          clima
-          mejor_epoca
-        }
-      }
-    `;
-    axios
-    .post('http://192.168.40.223:4000/', {
-      query: query,
-    })
-    .then((response) => {
-      const destinosData = response.data.data.destinos;
-      setDestinos(destinosData);
-    })
-      .catch((error) => {
-      console.error('Error al obtener destinos:', error);
-    });
-  };
-  
-  const fetchAgencias = () => {
-    // La consulta GraphQL
-    const query = `
-      query {
-        agencias {
-          nombre
-          contacto
-          telefono
-          email
-          direccion
-        }
-      }
-    `;
-    axios
-    .post('http://192.168.40.223:4000/', {
-      query: query,
-    })
-    .then((response) => {
-      const agenciasData = response.data.data.agencias;
-      setAgencias(agenciasData);
-    })
-      .catch((error) => {
-      console.error('Error al obtener agencias:', error);
-    });
-  };
-
-  type Paquete = {
-    nombre: string;
-    foto: string;
-  };
-
-  type DownloadedImages = Record<string, string>; // Mapeo del nombre del paquete a la ruta local de la imagen
-
-  const downloadImages = async (paquetes: Paquete[]): Promise<void> => {
-  const downloadedImages: DownloadedImages = {}; // Declara el tipo explícito
-  const imgDirectory = `${RNFS.DocumentDirectoryPath}/img`; // Ruta local para guardar imágenes
-
-  try {
-    // Crea el directorio "img" si no existe
-    const dirExists = await RNFS.exists(imgDirectory);
-    if (!dirExists) {
-      await RNFS.mkdir(imgDirectory);
-    }
-
-    for (const paquete of paquetes) {
-      const imageUrl = paquete.foto;
-      const fileName = imageUrl.split('/').pop(); // Obtén el nombre del archivo desde la URL
-      const localPath = `${imgDirectory}/${fileName}`; // Guarda las imágenes en la carpeta "img"
-
-      // Verifica si la imagen ya fue descargada
-      const fileExists = await RNFS.exists(localPath);
-      if (!fileExists) {
-        await RNFS.downloadFile({ fromUrl: imageUrl, toFile: localPath }).promise;
-      }
-
-      // Asigna la ruta local de la imagen al objeto
-      downloadedImages[paquete.nombre] = `file://${localPath}`;
-    }
-
-    setLocalImages(downloadedImages); // Actualiza el estado con las rutas locales
-  } catch (error) {
-    console.error('Error al descargar o guardar imágenes:', error);
+  if (error) {
+    console.error('Error al cargar paquetes:', error);
+    return <Text>Error al cargar paquetes: {error.message}</Text>;
   }
-};
+
+  if (!data.paquetes) {
+    return <Text>No se encontraron paquetes</Text>;
+  }
 
   return (
     <View style={styles.container}>
@@ -202,52 +77,46 @@ export default function ExploreScreen() {
           </TouchableOpacity>
         </ScrollView>
 
+        {/* Renderizar destinos */}
+        <View style={styles.paquetesContainer}>
+          {data.paquetes.map((paquete) => (
+            <View key={paquete._id} style={styles.card}>
+              {/* Mostrar la imagen solo si existe en el sistema de archivos */}
+              <Image
+                source={{ uri: paquete.foto }} // Usar la ruta completa de la imagen
+                style={styles.cardImage}
+                resizeMode="cover"
+              />
 
-        {/* Cards de alojamientos con datos de destinos */}
-        {paquete.length > 0 ? (
-          paquete.map((paquete, i) => (
-          <View key={i} style={styles.card}>
-            <Image style={styles.cardImage} source={{ uri: localImages[paquete.nombre] || paquete.foto }} />
-            <TouchableOpacity style={styles.favoriteButton}>
-              <Text style={styles.favoriteIcon}>🖤</Text>
-            </TouchableOpacity>
-            <View style={styles.cardContent}>
-              <View style={styles.titleContainer}>
+              <View style={styles.cardContent}>
                 <Text style={styles.cardTitle}>{paquete.nombre}</Text>
+
+                {/* Mostrar la agencia */}
+                <Text style={styles.cardAgency}>Publicado por: {paquete.agencia.nombre}</Text>
+
+                {/* Mostrar la calificación en estrellas */}
                 <View style={styles.ratingContainer}>
-                  <Text style={styles.ratingText}>★ {paquete.calificacion}</Text>
+                  {Array.from({ length: 5 }, (_, index) => (
+                    <Text key={index} style={styles.star}>
+                      {index < Math.floor(paquete.calificacion) ? '★' : '☆'}
+                    </Text>
+                  ))}
                 </View>
+
+                <Text style={styles.cardSubtitle}>{paquete.descripcion}</Text>
+                <Text style={styles.cardPrice}>Precio: ${paquete.precio}</Text>
+                <Text style={styles.cardDuration}>Duración: {paquete.duracion} días</Text>
+
+                <TouchableOpacity 
+                style={styles.mapButton}
+                onPress={() => navigation.navigate('ReservaScreen', {
+                  paquete: paquete   })}>
+                <Text style={styles.mapButtonText}>Ver más</Text>
+              </TouchableOpacity>
               </View>
-              <Text style={styles.cardSubtitle}>{"\n"}{paquete.destino}{"\n"}</Text>
-              <Text style={styles.cardSubtitle}>{paquete.descripcion}{"\n"}</Text>
-              <Text style={styles.cardPrice}>{"S/."}{paquete.precio}</Text>
             </View>
-            <TouchableOpacity 
-              style={styles.mapButton} 
-              onPress={() => navigation.navigate('ReservaScreen', {
-                foto: { uri: localImages[paquete.nombre] || paquete.foto },
-                destino: destino.nombre,
-                subtitle: paquete.destino,
-                whatsappNumber: paquete.telefono,
-                description: paquete.descripcion,
-                price: paquete.precio,
-                rating: paquete.calificacion,
-                duration: paquete.duracion,
-                includes: paquete.incluye,
-                interes: destino.puntos_interes,
-                activities: destino.actividades,
-                maxGroupSize: paquete.grupo,
-                hostName: agencia.nombre,
-                hostExperience: agencia.contacto,
-              })} // Navega a ReservaScreen
-            >
-              <Text style={styles.mapButtonText}>Comprar</Text>
-            </TouchableOpacity>
-          </View>
-        ))
-      ) : (
-        <Text>Cargando destinos...</Text>
-      )}
+          ))}
+        </View>
       </ScrollView>
 
       {/* Barra de navegación inferior */}
@@ -348,42 +217,31 @@ const styles = StyleSheet.create({
   },
   cardImage: {
     width: '100%',
-    height: 200,
-  },
-  favoriteButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    padding: 5,
-  },
-  favoriteIcon: {
-    fontSize: 20,
-    color: '#000', // Color rojo para el ícono de favorito
+    height: 200, // Puedes ajustar la altura según el diseño
+    borderTopLeftRadius: 8, // Redondea las esquinas superiores
+    borderTopRightRadius: 8, // Redondea las esquinas superiores
+    overflow: 'hidden', // Asegura que la imagen no se desborde
+    marginBottom: 10, // Espacio entre la imagen y el contenido
   },
   cardContent: {
     padding: 10,
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
   cardTitle: {
     fontSize: 24,
     color: 'black',
   },
+  cardAgency: {
+    fontSize: 14,
+    color: '#555',
+    marginTop: 5,
+  },
   ratingContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#000',
-    borderRadius: 15,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    marginTop: 5,
   },
-  ratingText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#fff',
+  star: {
+    fontSize: 18,
+    color: '#FFD700', // Color dorado para las estrellas
   },
   cardSubtitle: {
     fontSize: 14,
@@ -391,8 +249,13 @@ const styles = StyleSheet.create({
   },
   cardPrice: {
     fontSize: 16,
-    color: '#333',
-    fontWeight: 'bold',
+    color: '#28a745',
+    marginTop: 5,
+  },
+  cardDuration: {
+    fontSize: 16,
+    color: '#007bff',
+    marginTop: 5,
   },
   mapButton: {
     backgroundColor: '#000',

@@ -1,133 +1,75 @@
-import React,  { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Linking } from 'react-native';
-import anfitrion from '../img/anfitrion.png';
+// PaqueteDetalleScreen.js
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated, FlatList } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import DestinoCard from '../components/DestinoCard';  // Importamos el componente DestinoCard
 
-export default function ContactScreen() {
-
-  const navigation = useNavigation(); // Obtener acceso a la navegación
-  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
-  
-  const handleGoBack = () => {
-    if (!isButtonDisabled) {
-      setIsButtonDisabled(true); // Deshabilitar el botón al hacer clic
-      setTimeout(() => {
-        navigation.goBack(); // Regresar al menú después de 1 segundo
-      }, 100); // Retraso de 1 segundo para evitar múltiples clics
-    }
-  };
-
+export default function PaqueteDetalleScreen() {
   const route = useRoute();
-  const { 
-    foto,
-    destino,
-    subtitle,
-    whatsappNumber,
-    description,
-    price,
-    rating,
-    duration,
-    includes,
-    activities,
-    maxGroupSize,
-    hostName,
-    hostExperience,
-  } = route.params;
-
-  const [reviews, setReviews] = useState(0);
+  const navigation = useNavigation();
   
-  useEffect(() => {
-    const randomReviews = Math.floor(Math.random() * 91) + 10; // Genera un número entre 10 y 100
-    setReviews(randomReviews);
+  const { paquete } = route.params;
+
+  const imageOpacity = new Animated.Value(0);
+
+  React.useEffect(() => {
+    Animated.timing(imageOpacity, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
-  const [showFullDescription, setShowFullDescription] = useState(false);
-
-  const toggleDescription = () => {
-    setShowFullDescription(!showFullDescription);
-  };
-
-  const handleWhatsAppPress = () => {
-
-    const message = `Hola, me gustaría reservar un tour para "${destino}". ¿Podrías darme más información?`;
-    const whatsappURL = `whatsapp://send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
-
-    // Intentar abrir el enlace de WhatsApp
-    Linking.openURL(whatsappURL).catch((err) => {
-      console.error("No se pudo abrir WhatsApp", err);
-    });
+  const handleDestinationPress = (destination) => {
+    // Navegar a la pantalla de detalles del destino
+    navigation.navigate('DestinoDetalleScreen', { destino: destination });
   };
 
   return (
     <View style={styles.container}>
-      {/* Imagen Principal */}
-      <Image
-        style={styles.mainImage}
-        source={foto} // Se reemplaza la imagen con la ruta local
+      <Animated.Image 
+        source={{ uri: paquete.foto }} 
+        style={[styles.mainImage, { opacity: imageOpacity }]} 
+        resizeMode="cover"
       />
-
-      {/* Botón Circular en la parte superior derecha */}
-      <TouchableOpacity 
-        style={styles.circularButton} 
-        onPress={handleGoBack} // Volver al menú
-        disabled={isButtonDisabled} // Deshabilitar el botón si está en proceso
-      >
-        <Text style={styles.buttonText}>X</Text>
+      
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Text style={styles.buttonText}>←</Text>
       </TouchableOpacity>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Información General */}
-        <View style={styles.infoContainer}>
-          <Text style={styles.title}>{destino}</Text>
-          <Text style={styles.subtitle}>{subtitle} </Text>
-          <Text style={styles.details}>{duration}</Text>
-          <Text style={styles.details}>{includes}</Text>
-          <Text style={styles.details}>{activities}</Text>
-          <Text style={styles.details}>Grupo máximo: {maxGroupSize} personas</Text>
+      <ScrollView style={styles.scrollContainer}>
+        <View style={styles.detailsContainer}>
+          <Text style={styles.packageTitle}>{paquete.nombre}</Text>
+          <Text style={styles.packageSubtitle}>{paquete.descripcion}</Text>
+          <Text style={styles.price}>Precio: ${paquete.precio}</Text>
+          <Text style={styles.duration}>Duración: {paquete.duracion} días</Text>
+          <Text style={styles.detailsText}>Agencia: {paquete.agencia.nombre}</Text>
+          <Text style={styles.detailsText}>Dirección: {paquete.agencia.direccion}</Text>
+          <Text style={styles.detailsText}>Telefono: {paquete.agencia.telefono}</Text>
+          <Text style={styles.detailsText}>Calificación: {paquete.calificacion} ★</Text>
 
-          {/* Calificación y Opiniones */}
-          <View style={styles.ratingContainer}>
-            <Text style={styles.ratingText}>Calificación: {rating} ★★★★{"\n"}</Text>
-            <Text style={styles.favoriteText}>Favorito entre huéspedes{"\n"}</Text>
-            <Text style={styles.reviewText}>{reviews} Evaluaciones{"\n"}</Text>
-          </View>
-
-          {/* Información del Anfitrión */}
-          <View style={styles.hostInfo}>
-            <Image
-              style={styles.hostImage}
-              source={anfitrion} // Imagen del anfitrión
-            />
-            <View style={styles.hostDetails}>
-              <Text style={styles.hostName}>{hostName}</Text>
-              <Text style={styles.hostSubtitle}>{hostExperience}</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Descripción */}
-        <View style={styles.descriptionContainer}>
-          <Text style={styles.descriptionText}>
-            {showFullDescription ? description : (description ? `${description.substring(0, 200)}...` : '')}
-          </Text>
-          <TouchableOpacity onPress={toggleDescription}>
-            <Text style={styles.moreText}>{showFullDescription ? 'Mostrar menos' : 'Mostrar más >'}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Botón para Reservar o Contactar */}
-        <View style={styles.bottomContainer}>
-          <View style={styles.ratingContainer}>
-            <Text style={styles.priceText}>{"S/."}{price} noche</Text>
-            <Text style={styles.dateText}>18–23 de nov.{"\n"}</Text>
-            <Text style={styles.hostReserv}>Reserva tu Tour a {"\n"}{destino}{"\n"}</Text>
-            <Text style={styles.hostReserv}>{"\n"}</Text>
-          </View>
-          <TouchableOpacity style={styles.reserveButton} onPress={handleWhatsAppPress}>
-            <Text style={styles.reserveButtonText}>Reservar</Text>
-          </TouchableOpacity>
+          <Text style={styles.destinationsTitle}>Destinos de la Ruta</Text>
+          
+          <FlatList
+            data={paquete.destinos}
+            horizontal
+            keyExtractor={(item, index) => String(index)}
+            renderItem={({ item }) => (
+              <DestinoCard 
+                destino={item} 
+                onPress={handleDestinationPress} 
+              />
+            )}
+            showsHorizontalScrollIndicator={false}
+          />
         </View>
       </ScrollView>
+
+      <View style={styles.contactContainer}>
+        <TouchableOpacity style={styles.contactButton}>
+          <Text style={styles.contactButtonText}>Reservar ahora</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -135,129 +77,89 @@ export default function ContactScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F4F4F9',
   },
   mainImage: {
     width: '100%',
-    height: 250,
+    height: 200,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
-  circularButton: {
+  backButton: {
     position: 'absolute',
-    top: 15,
-    right: 10,
-    width: 35,
-    height: 35,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 1)', // Color negro translúcido
-    alignItems: 'center',
-    justifyContent: 'center',
+    top: 40,
+    left: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    padding: 12,
+    borderRadius: 50,
+    elevation: 5,
   },
   buttonText: {
-    color: '#000', // Color negro para la "X"
     fontSize: 20,
+    color: '#333',
     fontWeight: 'bold',
   },
-  
-  scrollContent: {
+  scrollContainer: {
+    flex: 1,
+    marginTop: 0,
     padding: 20,
   },
-  infoContainer: {
+  detailsContainer: {
+    paddingBottom: 60,
+  },
+  packageTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 15,
+  },
+  packageSubtitle: {
+    fontSize: 18,
+    color: '#7f8c8d',
     marginBottom: 20,
   },
-  title: {
-    fontSize: 25,
+  price: {
+    fontSize: 22,
+    color: '#27ae60',
     fontWeight: 'bold',
-    color: 'black',
+    marginBottom: 10 },
+  duration: {
+    fontSize: 18,
+    color: '#3498db',
+    marginBottom: 10,
   },
-  subtitle: {
+  detailsText: {
     fontSize: 16,
-    color: '#555',
-    marginVertical: 5,
+    color: '#7f8c8d',
+    marginBottom: 0,
   },
-  details: {
-    fontSize: 14,
-    color: '#777',
-  },
-  ratingContainer: {
-    flexDirection: 'column',
-    marginVertical: 10,
-  },
-  ratingText: {
-    fontSize: 14,
+  destinationsTitle: {
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
+    color: '#2c3e50',
+    marginVertical: 20,
   },
-  favoriteText: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 5,
+  contactContainer: {
+    padding: 20,
+    position: 'static',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    elevation: 10,
   },
-  reviewText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  hostInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  hostImage: {
-    width: 50,
-    height: 50,
+  contactButton: {
+    backgroundColor: '#e74c3c',
+    paddingVertical: 15,
     borderRadius: 25,
-  },
-  hostDetails: {
-    marginLeft: 10,
-  },
-  hostName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  hostReserv: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  hostSubtitle: {
-    fontSize: 14,
-    color: '#777',
-  },
-  descriptionContainer: {
-    marginVertical: 10,
-  },
-  descriptionText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  moreText: {
-    fontSize: 14,
-    color: '#1e90ff',
-    marginTop: 5,
-  },
-  bottomContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginVertical: 10,
+    elevation: 5,
   },
-  priceText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  dateText: {
-    fontSize: 14,
-    color: '#777',
-  },
-  reserveButton: {
-    backgroundColor: '#ff5a5f',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  reserveButtonText: {
+  contactButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
 });

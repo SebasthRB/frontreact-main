@@ -8,6 +8,7 @@ import CrearCuentaScreen from './src/screens/CrearCuentaScreen';
 import MainScreen from './src/screens/MainScreen';
 import MenuScreen from './src/screens/MenuScreen';
 import ReservaScreen from './src/screens/ReservaScreen'; 
+import DestinoDetalleScreen from './src/screens/DestinoDetalleScreen';
 
 type RootStackParamList = {
   Login: undefined;
@@ -29,6 +30,7 @@ const App = () => {
           <Stack.Screen name="MenuScreen" component={MenuScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Main" component={MainScreen} options={{ headerShown: false }} />
           <Stack.Screen name="ReservaScreen" component={ReservaScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="DestinoDetalleScreen" component={DestinoDetalleScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       </NavigationContainer>
     </ApolloProvider>
